@@ -1,0 +1,212 @@
+170-[JAWS]-Activity - Create a Website on S3
+Creating a Website on Amazon S3
+This lab guides you through using the AWS Command Line Interface (AWS CLI) on an Amazon EC2 instance to create and deploy a static website on Amazon S3 for a Café & Bakery. You will create an S3 bucket, configure IAM permissions, upload website files, and create a batch file for updates.
+Lab Overview
+In this lab, you will:
+
+Create an Amazon S3 bucket.
+Create an IAM user with full access to Amazon S3.
+Upload files to host a simple static website.
+Create a batch file to update the website when local files change.
+
+Clients can access the website via a URL like http://<bucket-name>.s3-website-us-west-2.amazonaws.com. You can manage the bucket using the AWS Management Console or AWS CLI.
+Duration: Approximately 45 minutes
+Objectives
+After completing this lab, you should be able to:
+
+Run AWS CLI commands for IAM and Amazon S3 services.
+Deploy a static website to an S3 bucket.
+Create a script to copy local files to Amazon S3.
+
+Accessing the AWS Management Console
+
+Choose Start Lab at the top of the instructions.
+Wait for the "Lab status: ready" message, then close the Start Lab panel by choosing X.
+Select AWS next to Start Lab to open the AWS Management Console in a new browser tab. You are automatically signed in.
+Tip: If the tab doesn’t open, check for a browser banner or icon blocking pop-ups and allow them.
+
+
+Arrange the AWS Management Console alongside these instructions.
+Important: Do not change the lab Region unless instructed.
+
+
+
+Task 1: Connect to an Amazon Linux EC2 Instance Using SSM
+
+Choose the Details button, then select Show.
+Copy the InstanceSessionUrl value and paste it into a new browser tab to connect to the EC2 instance via AWS Systems Manager Session Manager.
+In the terminal, run the following commands to switch to the ec2-user and verify the home directory:sudo su - ec2-user
+pwd
+
+
+This is the SSH terminal for running commands throughout the lab.
+
+
+
+Task 2: Configure the AWS CLI
+Amazon Linux instances have the AWS CLI pre-installed.
+
+In the SSH terminal, configure the AWS CLI with credentials:aws configure
+
+
+Enter the following at the prompts:
+AWS Access Key ID: Paste the AccessKey value from the lab pane.
+AWS Secret Access Key: Paste the SecretKey value from the lab pane.
+Default region name: Enter us-west-2.
+Default output format: Enter json.
+
+
+
+Task 3: Create an S3 Bucket Using the AWS CLI
+You will create a unique S3 bucket using the aws s3api create-bucket command. The bucket name must be unique, e.g., your first initial, last name, and three random numbers (e.g., twhitlock256 for Terry Whitlock).
+
+Run the following command, replacing <twhitlock256> with your bucket name:aws s3api create-bucket --bucket <twhitlock256> --region us-west-2 --create-bucket-configuration LocationConstraint=us-west-2
+
+
+A successful response returns a JSON object, e.g.:{
+    "Location": "http://twhitlock256.s3.amazonaws.com/"
+}
+
+
+
+
+
+Note: Use s3api for bucket creation, but s3 commands may be used later for file operations.
+Task 4: Create a New IAM User with Full Access to Amazon S3
+
+Create a new IAM user named aws3user:aws iam create-user --user-name aws3user
+
+
+Create a login profile for the user:aws iam create-login-profile --user-name aws3user --password Training123!
+
+
+Copy the AWS account number:
+In the AWS Management Console, select the VocLabsUser dropdown (top-right).
+Copy the 12-digit Account ID.
+Sign out from the dropdown menu.
+
+
+Log in as the aws3user:
+Choose Log back in or Sign in to the Console.
+Select IAM user, enter the account ID (no dashes), and choose Next.
+Enter aws3user as the IAM user name and Training123! as the password.
+Choose Sign in.
+
+
+In the AWS Management Console, search for S3 and select it to access the Amazon S3 console.
+Note: The bucket may not be visible initially. Refresh the page. The aws3user may lack access, resulting in an error.
+
+
+Find the AWS managed policy for full S3 access:aws iam list-policies --query "Policies[?contains(PolicyName, 'AmazonS3FullAccess')]"
+
+
+Attach the policy to aws3user:aws iam attach-user-policy --user-name aws3user --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+
+Task 5: Adjust S3 Bucket Permissions
+
+In the AWS Management Console, navigate to your S3 bucket.
+Under Permissions > Block public access (bucket settings), choose Edit.
+Uncheck Block all public access and save changes, confirming the prompt.
+Under Permissions > Object Ownership, choose Edit.
+Select ACLs enabled, acknowledge the restoration of ACLs, and save changes.
+
+Task 6: Extract Website Files
+
+In the SSH terminal, extract the static website files:cd ~/sysops-activity-files
+tar xvf static-website-v2.tar.gz
+cd static-website
+
+
+Verify the files with:ls
+
+
+You should see index.html and css and images directories.
+
+
+
+Task 7: Upload Files to Amazon S3 Using the AWS CLI
+
+Enable static website hosting on the bucket, replacing <my-bucket> with your bucket name:aws s3 website s3://<my-bucket>/ --index-document index.html
+
+
+Upload the files, replacing <my-bucket> with your bucket name:aws s3 cp /home/ec2-user/sysops-activity-files/static-website/ s3://<my-bucket>/ --recursive --acl public-read
+
+
+The --acl public-read parameter grants public read access, and --recursive uploads all files in the directory.
+
+
+Verify the upload, replacing <my-bucket> with your bucket name:aws s3 ls s3://<my-bucket>/
+
+
+In the AWS Management Console, navigate to your bucket’s Properties tab. Confirm Static website hosting is Enabled.
+Open the Bucket website endpoint URL in a new tab to view the website.
+
+Congratulations: Your static website is now publicly accessible!
+Task 8: Create a Batch File for Website Updates
+
+View recent commands:history
+
+
+Locate the aws s3 cp command from Task 7.
+Create a batch file:cd ~
+touch update-website.sh
+
+
+Edit the file using the VI editor:vi update-website.sh
+
+
+Press i to enter edit mode, then add the following, replacing <my-bucket> with your bucket name:#!/bin/bash
+aws s3 cp /home/ec2-user/sysops-activity-files/static-website/ s3://<my-bucket>/ --recursive --acl public-read
+
+
+Save and exit: Press Esc, type :wq, and press Enter.
+Make the file executable:chmod +x update-website.sh
+
+
+Edit the local index.html:vi sysops-activity-files/static-website/index.html
+
+
+Press i and make the following changes:
+Change the first bgcolor="aquamarine" to bgcolor="gainsboro".
+Change bgcolor="orange" to bgcolor="cornsilk".
+Change the second bgcolor="aquamarine" to bgcolor="gainsboro".
+
+
+Save and exit: Press Esc, type :wq, and press Enter.
+Run the batch file to update the website:./update-website.sh
+
+
+Refresh the Café & Bakery website in the browser to see the changes.
+
+Congratulations: You’ve made your first website revision!
+Optional Challenge: Optimize with aws s3 sync
+The aws s3 cp command uploads all files every time. The aws s3 sync command is more efficient, uploading only changed files.
+
+Make a noticeable change to index.html (e.g., modify a color) and save it.
+Update the batch file:vi update-website.sh
+
+
+Replace the aws s3 cp line with, replacing <my-bucket> with your bucket name:#!/bin/bash
+aws s3 sync /home/ec2-user/sysops-activity-files/static-website/ s3://<my-bucket>/ --acl public-read
+
+
+Save and exit: Press Esc, type :wq, and press Enter.
+Run the batch file:./update-website.sh
+
+
+Refresh the website to see the changes.
+Efficiency Note: The aws s3 sync command uploads only modified files (e.g., index.html), unlike aws s3 cp, which uploads all files.
+
+Conclusion
+You have successfully:
+
+Run AWS CLI commands for IAM and Amazon S3.
+Deployed a static website to an S3 bucket.
+Created a script to update the website efficiently.
+
+Lab Complete
+
+Choose End Lab at the top of the page and confirm with Yes.
+Close the End Lab panel by selecting the X in the upper-right corner.
