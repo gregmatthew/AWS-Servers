@@ -1,0 +1,175 @@
+171-[JAWS]-Lab - Creating Amazon EC2 Instances
+AWS EC2 Lab: Creating Amazon EC2 Instances
+Lab Overview
+This lab guides you through launching Amazon Elastic Compute Cloud (EC2) instances using the AWS Management Console and the AWS Command Line Interface (CLI). You will set up a bastion host using EC2 Instance Connect and launch a web server instance. The lab also includes optional challenges for troubleshooting EC2 configurations. The final architecture includes a bastion host and a web server instance.
+Duration: Approximately 45 minutes
+Objectives
+After completing this lab, you will be able to:
+
+Launch an EC2 instance using the AWS Management Console.
+Connect to an EC2 instance using EC2 Instance Connect.
+Launch an EC2 instance using the AWS CLI.
+
+Prerequisites
+
+Access to the AWS Management Console.
+Familiarity with basic AWS concepts (e.g., VPC, subnets, security groups).
+AWS CLI installed and configured on the bastion host.
+
+Step 1: Accessing the AWS Management Console
+
+At the top of the lab instructions, choose Start Lab to begin. The Start Lab panel will display the lab status.
+Wait until the lab status indicates it is ready before proceeding.
+
+Step 2: Choose an Amazon Machine Image (AMI)
+An Amazon Machine Image (AMI) includes:
+
+A template for the instance's root volume (e.g., operating system, application server, or applications).
+Launch permissions specifying which AWS accounts can use the AMI.
+Block device mappings defining the volumes to attach to the instance.
+
+Instructions
+
+In the AWS Management Console, navigate to the EC2 service.
+Select Launch Instance and choose an AMI from the Quick Start list, which contains commonly used AMIs, or select a custom AMI if required.
+
+Step 3: Configure Network Settings
+In this step, you configure the network settings for the EC2 instance.
+
+Virtual Private Cloud (VPC):
+
+Select the Lab VPC created by the AWS CloudFormation template during lab setup.
+This VPC includes one public subnet, which is selected by default. Keep this setting.
+
+
+Subnet:
+
+Ensure Public Subnet is selected.
+
+
+IP Endpoint:
+
+Verify that Enable is selected for the public IP endpoint.
+
+
+Firewall (Security Groups):
+
+Choose Create security group.
+Set the Security group name to restrict-security-group.
+Set the Description to restrict-ISP-connections.
+A security group acts as a virtual firewall to control instance traffic. Keep the default settings unless otherwise specified.
+
+
+
+Step 4: Download a User Data Script
+To configure the web server instance, you use a user data script that runs automatically when the instance launches.
+
+In your EC2 Instance Connect session, download the user data script using the provided command. (Note: The original document contains a placeholder URL. Replace it with the actual URL provided in your lab environment.)
+# Example command (replace with actual URL)
+wget https://<provided-URL>/user-data-script.sh
+
+
+Ensure the script is executable:
+chmod +x user-data-script.sh
+
+
+The script will install and configure the web server software when the instance launches.
+
+
+Step 5: Launch an EC2 Instance Using the AWS CLI
+You can automate EC2 instance provisioning using the AWS CLI.
+
+In the EC2 Instance Connect session on the bastion host, set the AWS region:
+export AWS_DEFAULT_REGION=<region>  # e.g., us-east-1
+
+
+Run the AWS CLI command to launch an EC2 instance. (Note: Replace placeholders like <ami-id>, <instance-type>, <key-pair-name>, <security-group-id>, and <subnet-id> with values from your lab environment.)
+aws ec2 run-instances \
+    --image-id <ami-id> \
+    --instance-type <instance-type> \
+    --key-name <key-pair-name> \
+    --security-group-ids <security-group-id> \
+    --subnet-id <subnet-id> \
+    --user-data file://user-data-script.sh
+
+
+
+Step 6: Wait for the Instance to Be Ready
+Monitor the instance status to ensure it is running.
+
+Check the instance status using the AWS CLI:
+aws ec2 describe-instances --instance-ids <instance-id>
+
+This command returns detailed information about the instance in JSON format.
+
+To retrieve only the instance state:
+aws ec2 describe-instances --instance-ids <instance-id> --query "Reservations[].Instances[].State.Name" --output text
+
+
+Repeat the command until the status is running. The instance may initially show pending.
+
+
+Step 7: Test the Web Server
+Verify that the web server is functioning correctly.
+
+Retrieve the public DNS name of the instance:
+aws ec2 describe-instances --instance-ids <instance-id> --query "Reservations[].Instances[].PublicDnsName" --output text
+
+
+Copy the DNS name (e.g., ec2-XX-XXX-XX-XXX.compute-1.amazonaws.com).
+
+Open a browser and navigate to the public DNS name to confirm the web server is accessible.
+
+
+Optional Challenge 1: Connect to an EC2 Instance
+This optional challenge involves troubleshooting a misconfigured EC2 instance.
+Tasks
+
+Attempt to connect to the Misconfigured Web Server instance using EC2 Instance Connect.
+Diagnose why the connection fails.
+Fix the misconfiguration (e.g., check security group rules, IAM permissions, or EC2 Instance Connect settings).
+
+Questions to Prepare
+
+What was the problem?
+What steps did you take to resolve it?
+
+Optional Challenge 2: Fix the Web Server Installation
+This challenge focuses on troubleshooting the web server installation.
+Tasks
+
+Retrieve the public IPv4 DNS name of the Misconfigured Web Server instance:
+aws ec2 describe-instances --instance-ids <instance-id> --query "Reservations[].Instances[].PublicDnsName" --output text
+
+
+Open the DNS name in a new browser window.
+
+Diagnose why the web server is not accessible (e.g., check the user data script, web server service status, or security group rules).
+
+Fix the misconfiguration.
+
+
+Questions to Prepare
+
+What was the problem?
+What steps did you take to fix it?
+
+Choosing the Right Launch Method
+
+AWS Management Console: Use for quick, one-off, or temporary instance launches.
+Scripts (AWS CLI): Use for automated, repeatable instance creation.
+AWS CloudFormation: Use for launching related resources together (e.g., EC2 instances, VPCs, and load balancers).
+
+Conclusion
+In this lab, you successfully:
+
+Launched an EC2 instance using the AWS Management Console.
+Connected to the instance using EC2 Instance Connect.
+Launched an EC2 instance using the AWS CLI.
+
+Lab Cleanup
+
+At the top of the lab page, choose End Lab.
+Confirm by selecting Yes.
+Wait for the message: "You may close this message box now. Lab resources are terminating."
+Close the End Lab panel by selecting the X in the upper-right corner.
