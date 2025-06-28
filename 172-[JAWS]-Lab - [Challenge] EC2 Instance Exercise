@@ -1,0 +1,114 @@
+172-[JAWS]-Lab - [Challenge] EC2 Instance Exercise
+AWS EC2 Instance Challenge Lab
+Lab Overview
+In this challenge lab, you apply your knowledge of Amazon Elastic Compute Cloud (Amazon EC2) to create a web application running on an Amazon Linux EC2 instance. You will follow high-level steps to configure a virtual network, launch an EC2 instance, install a web server, and deploy a simple web application.
+Objectives
+After completing this challenge, you should be able to:
+
+Configure a virtual network.
+Place an Amazon Linux EC2 instance into this virtual network.
+Install a web server and deploy a simple application on it.
+
+Duration
+This challenge requires approximately 45 minutes to complete.
+Challenge Instructions
+Prerequisites
+
+Start the lab by choosing Start Lab to launch the lab environment.
+Wait until the Start Lab panel displays the message "Lab status: ready," then choose X to close the panel.
+The lab provides a new AWS account to create the necessary resources for launching an EC2 instance and running a web application.
+Next to Start Lab, choose AWS to open the AWS Management Console in a new browser tab. The system will automatically sign you in.
+
+Challenge Steps
+To complete the challenge, create an Amazon Linux EC2 instance to run a web application by following these steps:
+
+Launch the EC2 Instance
+
+Use the AWS Management Console to launch the instance.
+Select an Amazon Linux Amazon Machine Image (AMI).
+Choose a T3 instance type with a size smaller than medium (e.g., t3.micro).
+Launch the instance in a new Virtual Private Cloud (VPC) with a new subnet.
+Enable auto-assignment of a public IP address for the instance.
+
+
+Configure User Data
+
+In the user data section during instance creation, include a script to:
+Install the httpd service (Apache web server).
+Start the httpd service.
+Grant write permissions to users for the web server's document root directory (/var/www/html).
+
+
+
+Example user data script:
+#!/bin/bash
+yum update -y
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+chmod -R 775 /var/www/html
+
+
+Configure Storage
+
+Use a General Purpose SSD (gp2) volume type for the root volume.
+
+
+Set Up Networking
+
+Create an Internet Gateway and attach it to the VPC.
+Configure the subnet's route table to include a route to the Internet Gateway for internet access.
+
+
+Configure Security Group
+
+Create a security group that allows:
+SSH (port 22) for secure shell access.
+HTTP (port 80) for web traffic.
+
+
+Associate this security group with the EC2 instance.
+
+
+Connect to the Instance
+
+Use EC2 Instance Connect to connect to the EC2 instance via SSH in a web browser.
+
+
+Verify Web Server Installation
+
+Access the EC2 instance's system log and capture a screenshot showing that the httpd service was successfully installed.
+
+
+Deploy a Web Page
+
+Connect to the EC2 instance using EC2 Instance Connect.
+Create a file named index.html in the /var/www/html directory.
+Copy and paste the following HTML code into index.html using a text editor (e.g., nano or vi):<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to My Web Server</title>
+</head>
+<body>
+    <h1>My EC2 Web Server</h1>
+    <p>Welcome to my simple web application running on an Amazon Linux EC2 instance!</p>
+</body>
+</html>
+
+
+Save the file and ensure it is accessible by the web server.
+Use sudo to copy the file to /var/www/html if necessary (e.g., sudo mv index.html /var/www/html/).
+
+
+Test the Web Server
+
+Access the web page by navigating to the instance's public IPv4 address in a web browser (e.g., http://<public-ip>).
+Verify that the web page loads correctly.
+
+
+
+Notes
+
+Ensure all resources (VPC, subnet, Internet Gateway, route table, security group) are properly configured before launching the instance.
+Use the public IPv4 address to access the web page, not the private IP.
+If you encounter permission issues when copying files to /var/www/html, use sudo to elevate privileges.
