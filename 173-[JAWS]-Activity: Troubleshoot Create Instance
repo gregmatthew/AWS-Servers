@@ -1,0 +1,99 @@
+173-[JAWS]-Activity: Troubleshoot Create Instance
+AWS EC2 Instance Creation and Troubleshooting Lab
+Overview
+This lab guides you through launching an Amazon EC2 instance using the AWS Command Line Interface (AWS CLI). You will configure the instance with a user data script to set up a LAMP stack (Linux, Apache, MariaDB, PHP). The lab includes troubleshooting steps to resolve common issues encountered during instance creation and configuration. The activity is expected to take approximately 45 minutes.
+Objectives
+By completing this lab, you will be able to:
+
+Launch an EC2 instance using the AWS CLI.
+Troubleshoot AWS CLI commands and Amazon EC2 service settings using basic troubleshooting techniques and open-source tools.
+
+Prerequisites
+
+AWS CLI installed (pre-installed on Amazon Linux AMIs).
+AWS credentials (Access Key ID and Secret Access Key) provided by the lab environment.
+Basic familiarity with Linux commands and shell scripting.
+
+Task 1: Configuring the AWS CLI
+In this task, you configure the AWS CLI with the provided credentials to interact with AWS services.
+
+Run the following command to set up the AWS CLI profile:aws configure
+
+
+When prompted, enter the following:
+AWS Access Key ID: Copy from the lab environment (choose "Details" > "Show" in the lab interface).
+AWS Secret Access Key: Copy from the lab environment.
+Default region name: Enter the region provided (e.g., us-east-1).
+Default output format: Enter json (or as specified).
+
+
+Verify the configuration by running:aws sts get-caller-identity
+
+
+
+Tip: If connecting to an EC2 instance, use the right-click menu to paste values in the terminal.
+Task 2: Analyzing the User Data Script
+The user data script (create-lamp-instance-v2.sh) configures the EC2 instance with a LAMP stack. Key components of the script include:
+
+Line 1: Shebang (#!/bin/bash) to indicate a bash script.
+Lines 7-12: Sets the instance size to t2.small, suitable for running a database and web server.
+Lines 16-29: Uses the AWS CLI command aws ec2 describe-regions to list all AWS regions, then queries for a VPC named "Cafe VPC" and captures its ID for instance configuration.
+
+To view the script with line numbers in vi/vim:
+vi create-lamp-instance-v2.sh
+:set number
+
+Task 3: Running the Script
+Run the script to launch the EC2 instance:
+./create-lamp-instance-v2.sh
+
+The script is expected to fail initially, requiring troubleshooting.
+Task 4: Troubleshooting Issues
+Issue 1: Invalid AMI ID
+Error Message: 
+An error occurred (InvalidAMIID.NotFound) when calling the RunInstances operation: The image id '[ami-xxxxxxxx]' does not exist.
+
+Troubleshooting Steps:
+
+Check the Script: Open create-lamp-instance-v2.sh and locate the line specifying the AMI ID in the aws ec2 run-instances command.
+Verify the AMI ID: Ensure the AMI ID is valid for the region specified. Use the AWS CLI to list available AMIs:aws ec2 describe-images --owners amazon --filters "Name=name,Values=amzn2-ami-hvm-*" --query 'Images[*].[ImageId,Name]' --output table
+
+
+Correct the Region: Confirm the region in the script matches the configured AWS CLI region. Update the script if necessary:aws ec2 run-instances --image-id ami-correct-id --region us-east-1 ...
+
+
+Re-run the script after updating the AMI ID and region.
+
+Issue 2: Web Page Not Loading
+After the instance launches and a public IP address is assigned, the test web page fails to load.
+Troubleshooting Steps:
+
+Check Port 80: Verify that TCP port 80 (HTTP) is open in the instance's security group:aws ec2 describe-security-groups --group-ids <security-group-id> --query 'SecurityGroups[*].IpPermissions[]'
+
+Add a rule to allow HTTP traffic if missing:aws ec2 authorize-security-group-ingress --group-id <security-group-id> --protocol tcp --port 80 --cidr 0.0.0.0/0
+
+
+Verify Web Server Status: Connect to the LAMP instance using EC2 Instance Connect and check if the Apache web server (httpd) is running:sudo systemctl status httpd
+
+Start the service if it is not running:sudo systemctl start httpd
+
+
+Install and Use Nmap: On the CLI host instance, install nmap to scan ports:sudo yum install nmap -y
+
+Scan the LAMP instance's public IP for open ports:nmap <public-ip>
+
+
+Check Logs: View the cloud-init logs for errors in the user data script execution:sudo cat /var/log/cloud-init-output.log
+
+
+
+Task 5: Verifying Website Functionality
+
+Navigate to the website using the instance's public IPv4 address:http://<public-ip>
+
+
+If successful, the cafe website should load. Click the "Menu" link to access http://<public-ip>/order.php.
+Verify that you can order items through the website. A successful order indicates the LAMP stack is functioning correctly.
+
+Conclusion
+This lab demonstrated how to launch an EC2 instance using the AWS CLI, configure a LAMP stack, and troubleshoot common issues such as invalid AMI IDs and web server connectivity problems. By following the steps, you have gained hands-on experience with AWS CLI commands, EC2 instance management, and basic network troubleshooting.
